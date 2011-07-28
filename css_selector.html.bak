@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE> css Selection </TITLE>
+<meta content="text/html; charset=utf-8" http-quiv="Content-Type">
+<META NAME="happydeveloper" CONTENT="EditPlus">
+<META NAME="Author" CONTENT="KANG DURU">
+<META NAME="Keywords" CONTENT="">
+<META NAME="Description" CONTENT="selector http://opentutrials.org">
+<style type="text/css">
+	#memo{
+		color:red;
+	}
+	.green{
+		color:green;
+	}
+	.red intro{
+		color:black;
+	}
+	h1{
+		color:blue;
+		font-size:30px;
+	}
+</style>
+</HEAD>
+
+<BODY>
+	<div id="memo">
+		id Selection
+	</div>
+	<div class="green">Class Select1</div>
+	<p class="red intro">Class Select2</p>
+	<h1> Type Select </h1>
+</BODY>
+</HTML>
