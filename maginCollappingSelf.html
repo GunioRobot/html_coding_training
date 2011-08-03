@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+################################################################################
+[프로그램명] 업무모듈 UI
+[설      명] 업무모듈 UI 샘플 스크립트
+[작  성  자] 강두루
+[작  성  일] 2011.06.21.
+*****************************************************************************
+[수정 이력]
+2011.06.21. 샘플 작성
+################################################################################
+-->
+<kut:KUTNavigatorContent 
+	xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	xmlns:kut="library://ns.kut.ac.kr/flex/kut"
+	xmlns:code="kut.lib.components.*"
+	xmlns:MANG = "ADM.MANG.*" 
+
+	preinitialize="onPreInitialize()"
+	creationComplete="onCreateComplete()"
+	
+	> 
+	
+	<fx:Script>
+		<![CDATA[ 
+			import kut.common.vo.UserVO;
+			import kut.framework.flex.events.KUTDataGridEvent;
+			import kut.framework.flex.events.RpcResultEvent;
+			import kut.framework.flex.modules.ModuleConstants;
+			import kut.framework.flex.rpc.remoting.RemotingManager;
+			import kut.framework.flex.rpc.remoting.RpcConstants;
+			import kut.framework.flex.rpc.remoting.vo.ResultVO;
+			import kut.framework.flex.utils.FormUtil;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Text;
+			import mx.core.FlexGlobals;
+			import mx.events.CalendarLayoutChangeEvent;
+			import mx.events.CloseEvent;
+			import mx.events.CollectionEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.PropertyChangeEvent;
+			import mx.utils.ArrayUtil;
+			
+			
+			include "common.as";
+			include "DataAccessLayer.as";
+			
+			
+			/** Variable **/          
+			/* global variable*/   
+			
+			
+			/* datagrid variable */
+			[Bindable] private var _dgIEVL_SCHD:ArrayCollection = new ArrayCollection();
+			
+			/* form variable */
+			
+			/* component variable */   
+			
+			/* code data variable */   
+			
+			/** Function **/                                  
+			/* event function */                              
+			/**
+			 * 멤버변수 초기화
+			 */
+			public function onPreInitialize():void {
+				// 세션 정보 받아오기
+				userVo = FlexGlobals.topLevelApplication.userVo;
+				getCurrentDate("YYYYMMDD", "currentDate");
+				
+			}
+			/**
+			 * 화면 생성 완료 후 처리
+			 */
+			public function onCreateComplete():void {
+				listCommand();
+			}
+			/**
+			 * 조회 처리
+			 */
+			public function onListCommand():void {
+				listCommand();
+			}
+			/**
+			 * 신규 처리
+			 */
+			public function onNewCommand():void {
+				FormUtil.setDataMapping(this.PM_PERIOD);
+				FormUtil.setDataMapping(this.detail);
+				init();
+				
+				this.PM_PERIOD.fnSetInit(this);
+				this.PM_PERIOD.IEVL_TITLE.setFocus();
+				parentDocument.commandString = ModuleConstants.COMMAND_NEW;
+			}
+			/**
+			 * 저장 처리
+			 */
+			public function onSaveCommand():void {
+				saveCommand();
+			}
+			
+			/**
+			 * 삭제처리
+			 */
+			public function onDeleteCommand():void {
+				deleteCommmand();
+			}
+			
+			/**
+			 * 데이타그리드 아이템 클릭시
+			 */
+			private function dgitemclick():void{
+				setGridData();	
+			}
+			/**
+			 * 데이트 필드의 값이 바뀔 때마다 
+			 */
+			private function changeIEVL_INPT_DE_TO():void{
+				startDateToFinishDateCheck(this.IEVL_INPT_DE_TO, this.IEVL_INPT_DE_FROM);
+			}
+			private function changeIEVL_CONF_DE_TO():void{
+				startDateToFinishDateCheck(this.IEVL_CONF_DE_TO, this.IEVL_CONF_DE_FROM);
+			}
+			private function changeIEVL_REGI():void{
+				startDateToFinishDateCheck(this.IEVL_REGI_DE_TO, this.IEVL_REGI_DE_FROM);
+			}	
+			private function changeIEVL_CMMT():void{
+				startDateToFinishDateCheck(this.IEVL_CMMT_DE_TO, this.IEVL_CMMT_DE_FROM);	
+			}
+			
+			
+			
+			
+			
+			/* business function */                           
+			private function init():void{
+				getNowDate("LocalDate");
+				IEVL_INPT_DE_TO.itemValue = LocalDate;
+				IEVL_INPT_DE_FROM.itemValue = LocalDate;
+				IEVL_CONF_DE_TO.itemValue = LocalDate;
+				IEVL_CONF_DE_FROM.itemValue = LocalDate;
+				IEVL_REGI_DE_TO.itemValue = LocalDate;
+				IEVL_REGI_DE_FROM.itemValue = LocalDate;
+				IEVL_CMMT_DE_TO.itemValue = LocalDate;
+				IEVL_CMMT_DE_FROM.itemValue = LocalDate;
+				IEVL_CLOSE_YN_FUND.itemValue = 'N';
+				IEVL_CLOSE_YN_CONF.itemValue = 'N';
+				IEVL_CLOSE_YN_INPT.itemValue = 'N';
+				IEVL_CLOSE_YN_CMMT.itemValue = 'N';
+			}
+			
+			private function setGridData():void{
+				FormUtil.setDataMapping(this.PM_PERIOD , this.dgIEVL_SCHD.selectedItem);
+				FormUtil.setDataMapping(this.detail, this.dgIEVL_SCHD.selectedItem);
+				parentDocument.commandString = ModuleConstants.COMMAND_MODIFY;
+			}
+			
+			//폼 안에 항목에 대한 파라미터 어레이를 지정함.
+			private function setParam():ArrayCollection{
+				var arrData:ArrayCollection = new ArrayCollection(
+					[ 
+						{KEY:"IEVL_YEAR", VALUE:this.PM_PERIOD.YEAR},            
+						{KEY:"IEVL_TITLE", VALUE:this.PM_PERIOD.TITLE},           
+						{KEY:"IEVL_CLOSE_YN", VALUE:this.PM_PERIOD.CL_YN},        
+						{KEY:"IEVL_JOB_DE_FROM", VALUE:this.PM_PERIOD.JOB_DE_FROM},
+						{KEY:"IEVL_JOB_DE_TO", VALUE:this.PM_PERIOD.JOB_DE_TO}, 
+						
+						{KEY:"IEVL_INPT_DE_FROM", VALUE:this.IEVL_INPT_DE_FROM.itemValue},
+						{KEY:"IEVL_INPT_DE_TO", VALUE:this.IEVL_INPT_DE_TO.itemValue}, 
+						{KEY:"IEVL_CONF_DE_FROM", VALUE:this.IEVL_CONF_DE_FROM.itemValue}, 
+						{KEY:"IEVL_CONF_DE_TO", VALUE:this.IEVL_CONF_DE_TO.itemValue},
+						{KEY:"IEVL_REGI_DE_FROM", VALUE:this.IEVL_REGI_DE_FROM.itemValue},
+						{KEY:"IEVL_REGI_DE_TO", VALUE:this.IEVL_REGI_DE_TO.itemValue}, 
+						{KEY:"IEVL_CMMT_DE_FROM", VALUE:this.IEVL_CMMT_DE_FROM.itemValue}, 
+						{KEY:"IEVL_CMMT_DE_TO", VALUE:this.IEVL_CMMT_DE_TO.itemValue},
+						
+						//{KEY:"IEVL_CLOSE_DE", VALUE:this.IEVL_CLOS},
+						{KEY:"IEVL_CLOSE_YN_FUND", VALUE:this.IEVL_CLOSE_YN_FUND.itemValue}, 
+						{KEY:"IEVL_CLOSE_YN_CONF", VALUE:this.IEVL_CLOSE_YN_CONF.itemValue}, 
+						{KEY:"IEVL_CLOSE_YN_INPT", VALUE:this.IEVL_CLOSE_YN_INPT.itemValue}, 
+						{KEY:"IEVL_CLOSE_YN_CMMT", VALUE:this.IEVL_CLOSE_YN_CMMT.itemValue}, 
+						{KEY:"REG_ID", VALUE:this.userVo.userId },
+						{KEY:"REG_IP", VALUE:this.userVo.userIp}
+					]); 
+				
+				return arrData;
+			}
+			
+			
+			/* data access function, sever call function */    
+			public function listCommand():void{ 
+				dataGridFormMappingServerList("ADM_MANG_1101.select", "dgIEVL_SCHD", "detail", "_dgIEVL_SCHD", setGridData, init);
+			} 
+			
+			private function saveCommand():void{
+				var setParam:ArrayCollection = setParam();
+				FormMapppingServerSave(this,"ADM_MANG_1101.insert","ADM_MANG_1101.update","ADM_MANG_1101.insertUpdateChk", "_dgIEVL_SCHD", setParam, listCommand);
+			}
+			
+			
+			
+			private function deleteCommmand():void{
+				serverDelete(this,"ADM_MANG_1101.delete", this.dgIEVL_SCHD, onListCommand);
+			} 
+			
+		]]>
+	</fx:Script>
+	 
+		<!--  그리드 시작 -->
+		<kut:KUTDataGrid  
+			id="dgIEVL_SCHD"  
+			showMultiCheck="true"
+			editable="true" 
+			dataProvider="{this._dgIEVL_SCHD}"
+			itemClick="dgitemclick()"
+			height="100"
+			>
+			<kut:groupedColumns>
+				<kut:KUTDataGridColumn headerText="평가년도" dataField="IEVL_YEAR"  maxChars="4" width="50" />
+				<kut:KUTDataGridColumn headerText="평가명" dataField="IEVL_TITLE"  maxChars="64" width="150" />
+				<kut:KUTDataGridColumn headerText="등록자" dataField="REG_ID"  maxChars="30" width="50" />
+				<kut:KUTDataGridColumn headerText="등록일시" dataField="REG_DT"  maxChars="14" width="100" />
+			</kut:groupedColumns>
+		</kut:KUTDataGrid>	 
+		<!--  그리드 종료 -->	
+		
+		<MANG:MANG_PM_D01 id = "PM_PERIOD" />
+		<mx:VDividedBox  width="100%">
+			<kut:KUTContainer id="detail" layoutType="H" styleOption="normal" height="400">
+				<kut:KUTGroupBox layoutType="V">
+					<kut:KUTGroup>
+						<kut:KUTLabel text="기초자료" labelAlign="left" width="15%" />
+						<kut:KUTDateField id="IEVL_INPT_DE_TO" labelText="입력기간_TO" width="40%" change="changeIEVL_INPT_DE_TO()"/>
+						<kut:KUTDateField id="IEVL_INPT_DE_FROM" labelText="입력기간_FROM"  labelWidth="100" width="40%" change="changeIEVL_INPT_DE_TO()"  />
+						<kut:KUTDropDownList id="IEVL_CLOSE_YN_FUND" labelText="마감여부" width="10%" dataProvider="{this._aryYesNo}"  />
+					</kut:KUTGroup>
+					<kut:KUTGroup>
+						<kut:KUTLabel text="실적지표" labelAlign="left" width="15%" />
+						<kut:KUTDateField id="IEVL_CONF_DE_TO" labelText="확인기간_TO" width="40%" change="changeIEVL_CONF_DE_TO()" />
+						<kut:KUTDateField id="IEVL_CONF_DE_FROM" labelText="확인기간_FROM"  labelWidth="100" width="40%" change="changeIEVL_CONF_DE_TO()" />
+						<kut:KUTDropDownList id="IEVL_CLOSE_YN_CONF" labelText="마감여부" width="10%" dataProvider="{this._aryYesNo}" />
+					</kut:KUTGroup>
+					<kut:KUTGroup>
+						<kut:KUTLabel text="학부실적" labelAlign="left" width="15%" />
+						<kut:KUTDateField id="IEVL_REGI_DE_TO" labelText="등록기간_TO" width="40%" />
+						<kut:KUTDateField id="IEVL_REGI_DE_FROM" labelText="등록기간_FROM"  labelWidth="100" width="40%" change="changeIEVL_REGI()" />
+						<kut:KUTDropDownList id="IEVL_CLOSE_YN_INPT" labelText="마감여부" width="10%" dataProvider="{this._aryYesNo}" change="changeIEVL_REGI()" />
+					</kut:KUTGroup>
+					<kut:KUTGroup> 
+						<kut:KUTLabel text="위원회평가" labelAlign="left" width="15%" />
+						<kut:KUTDateField id="IEVL_CMMT_DE_TO" labelText="평가기간_TO" width="40%" />
+						<kut:KUTDateField id="IEVL_CMMT_DE_FROM" labelText="평가기간_FROM"  labelWidth="100" width="40%" change="changeIEVL_CMMT()"/>
+						<kut:KUTDropDownList id="IEVL_CLOSE_YN_CMMT" labelText="마감여부" width="10%" dataProvider="{this._aryYesNo}" change="changeIEVL_CMMT()" /> 
+					</kut:KUTGroup> 
+				</kut:KUTGroupBox>
+			</kut:KUTContainer>
+		</mx:VDividedBox>
+
+</kut:KUTNavigatorContent> 

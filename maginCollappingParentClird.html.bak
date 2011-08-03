@@ -1,0 +1,12 @@
+<html>
+	<!--
+		부모 자식 엘리먼트간의 마진 겹침 현상
+	-->
+	<body style="border:1px solid blue">
+		<div style="margin-top:100px; border:1px solid red">
+			<div style="margin-top:50px; border:1px solid green">
+			 부모 자식 엘리먼트간의 마진 겹침 현상
+			</div>
+		</div>
+	</body>
+</htmL>
